@@ -60,8 +60,9 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
+import socketService from '../services/socketService'
 
 export default {
   name: 'RankingView',
@@ -108,6 +109,23 @@ export default {
 
     onMounted(() => {
       fetchRankings()
+      
+      // Conectar al socket
+      socketService.connect()
+
+      // Escuchar actualizaciones del ranking
+      socketService.on('rankingUpdated', (data) => {
+        rankings.value = data
+      })
+
+      // Escuchar final de partida para actualizar ranking
+      socketService.on('gameEnded', () => {
+        fetchRankings()
+      })
+    })
+
+    onUnmounted(() => {
+      socketService.disconnect()
     })
 
     return {

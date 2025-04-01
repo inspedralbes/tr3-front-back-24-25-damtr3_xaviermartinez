@@ -117,8 +117,9 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
+import socketService from '../services/socketService'
 
 export default {
   name: 'HomeView',
@@ -153,6 +154,53 @@ export default {
 
     onMounted(() => {
       fetchStats()
+      
+      // Conectar al socket
+      socketService.connect()
+
+      // Escuchar actualizaciones de estadísticas
+      socketService.on('statsUpdated', (data) => {
+        if (data.playerId === '1') {
+          player1Stats.value = {
+            ...player1Stats.value,
+            ...data.stats
+          }
+        } else if (data.playerId === '2') {
+          player2Stats.value = {
+            ...player2Stats.value,
+            ...data.stats
+          }
+        }
+      })
+
+      // Escuchar eventos específicos
+      socketService.on('playerKilled', (data) => {
+        if (data.playerId === '1') {
+          player1Stats.value.playersKilled++
+        } else if (data.playerId === '2') {
+          player2Stats.value.playersKilled++
+        }
+      })
+
+      socketService.on('blockDestroyed', (data) => {
+        if (data.playerId === '1') {
+          player1Stats.value.blocksDestroyed++
+        } else if (data.playerId === '2') {
+          player2Stats.value.blocksDestroyed++
+        }
+      })
+
+      socketService.on('bombPlaced', (data) => {
+        if (data.playerId === '1') {
+          player1Stats.value.bombsUsed++
+        } else if (data.playerId === '2') {
+          player2Stats.value.bombsUsed++
+        }
+      })
+    })
+
+    onUnmounted(() => {
+      socketService.disconnect()
     })
 
     return {
