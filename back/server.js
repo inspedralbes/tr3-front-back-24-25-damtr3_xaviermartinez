@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 const Character = require('./models/Character');
+const statsRoutes = require('./routes/stats');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -12,6 +13,35 @@ const port = process.env.PORT || 3000;
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         console.log('✅ Conectado a MongoDB');
+        // Crear algunos datos de prueba para las estadísticas
+        const Stats = require('./models/Stats');
+        const testStats = new Stats({
+            gameId: 'test1',
+            duration: 300,
+            winner: 'Player1',
+            players: [
+                {
+                    name: 'Player1',
+                    score: 1000,
+                    bombsPlaced: 15,
+                    powerupsCollected: 5,
+                    kills: 3
+                },
+                {
+                    name: 'Player2',
+                    score: 800,
+                    bombsPlaced: 12,
+                    powerupsCollected: 3,
+                    kills: 2
+                }
+            ],
+            mapName: 'Classic'
+        });
+
+        testStats.save()
+            .then(() => console.log('✅ Estadísticas de prueba creadas'))
+            .catch(err => console.error('❌ Error al crear estadísticas:', err));
+
         // Crear un personaje de prueba
         const testCharacter = new Character({
             name: "Personaje de Prueba",
@@ -31,6 +61,9 @@ mongoose.connect(process.env.MONGO_URI)
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../front')));
+
+// Rutas de la API
+app.use('/api/stats', statsRoutes);
 
 // Initial game data
 let gameData = {
