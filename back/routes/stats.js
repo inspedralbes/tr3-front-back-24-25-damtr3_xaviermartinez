@@ -82,81 +82,85 @@ router.get('/summary', async (req, res) => {
 // Obtener estadísticas generales
 router.get('/general', async (req, res) => {
     try {
-        const totalGames = await Stats.countDocuments();
         const stats = await Stats.aggregate([
             {
                 $group: {
                     _id: null,
-                    avgDuration: { $avg: '$duration' },
                     totalGames: { $sum: 1 },
-                    totalPlayers: { $sum: { $size: '$players' } },
-                    totalBombs: { $sum: { $sum: '$players.bombsPlaced' } },
-                    totalPowerups: { $sum: { $sum: '$players.powerupsCollected' } }
+                    totalBombs: { $sum: '$bombsPlaced' },
+                    totalBlocks: { $sum: '$blocksDestroyed' },
+                    totalKills: { $sum: '$kills' },
+                    totalDeaths: { $sum: '$deaths' },
+                    avgPlayTime: { $avg: '$totalPlayTime' },
+                    totalPowerups: { $sum: '$powerupsCollected' }
                 }
             }
         ]);
 
-        const playerStats = await Stats.aggregate([
-            { $unwind: '$players' },
+        const result = stats[0] || {
+            totalGames: 0,
+            totalBombs: 0,
+            totalBlocks: 0,
+            totalKills: 0,
+            totalDeaths: 0,
+            avgPlayTime: 0,
+            totalPowerups: 0
+        };
+
+        delete result._id;
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Obtener estadísticas por jugador
+router.get('/player/:name', async (req, res) => {
+    try {
+        const playerStats = await Stats.findOne({ player: req.params.name });
+        if (!playerStats) {
+            return res.status(404).json({ message: "Player not found" });
+        }
+        res.json(playerStats);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Obtener ranking de jugadores
+router.get('/ranking', async (req, res) => {
+    try {
+        const ranking = await Stats.aggregate([
             {
                 $group: {
-                    _id: '$players.name',
-                    totalKills: { $sum: '$players.kills' },
-                    totalScore: { $sum: '$players.score' },
-                    gamesPlayed: { $sum: 1 }
+                    _id: '$player',
+                    totalGames: { $sum: '$gamesPlayed' },
+                    totalKills: { $sum: '$kills' },
+                    totalDeaths: { $sum: '$deaths' },
+                    winRate: { $avg: { $cond: [{ $eq: ['$gameHistory.result', 'win'] }, 1, 0] } }
                 }
             },
-            { $sort: { totalScore: -1 } },
+            {
+                $project: {
+                    player: '$_id',
+                    totalGames: 1,
+                    totalKills: 1,
+                    totalDeaths: 1,
+                    winRate: 1,
+                    kdRatio: {
+                        $cond: [
+                            { $eq: ['$totalDeaths', 0] },
+                            '$totalKills',
+                            { $divide: ['$totalKills', '$totalDeaths'] }
+                        ]
+                    }
+                }
+            },
+            { $sort: { winRate: -1, kdRatio: -1 } },
             { $limit: 10 }
         ]);
 
-        res.json({
-            generalStats: stats[0],
-            topPlayers: playerStats
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Obtener estadísticas por mapa
-router.get('/maps', async (req, res) => {
-    try {
-        const mapStats = await Stats.aggregate([
-            {
-                $group: {
-                    _id: '$mapName',
-                    gamesPlayed: { $sum: 1 },
-                    avgDuration: { $avg: '$duration' },
-                    totalKills: { $sum: { $sum: '$players.kills' } }
-                }
-            }
-        ]);
-        res.json(mapStats);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Obtener estadísticas de un jugador específico
-router.get('/player/:name', async (req, res) => {
-    try {
-        const playerStats = await Stats.aggregate([
-            { $unwind: '$players' },
-            { $match: { 'players.name': req.params.name } },
-            {
-                $group: {
-                    _id: '$players.name',
-                    totalGames: { $sum: 1 },
-                    totalKills: { $sum: '$players.kills' },
-                    totalScore: { $sum: '$players.score' },
-                    avgScore: { $avg: '$players.score' },
-                    totalBombs: { $sum: '$players.bombsPlaced' },
-                    totalPowerups: { $sum: '$players.powerupsCollected' }
-                }
-            }
-        ]);
-        res.json(playerStats[0] || { error: 'Player not found' });
+        res.json(ranking);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
