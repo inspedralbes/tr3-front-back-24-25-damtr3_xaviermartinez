@@ -1,9 +1,32 @@
+require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const Character = require('./models/Character');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+
+// Conectar a MongoDB
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log('✅ Conectado a MongoDB');
+        // Crear un personaje de prueba
+        const testCharacter = new Character({
+            name: "Personaje de Prueba",
+            health: 5,
+            speed: 5,
+            damage: 30
+        });
+
+        testCharacter.save()
+            .then(() => console.log('✅ Personaje de prueba creado'))
+            .catch(err => console.error('❌ Error al crear personaje:', err));
+    })
+    .catch(err => {
+        console.error('❌ Error conectando a MongoDB:', err);
+    });
 
 app.use(cors());
 app.use(express.json());
