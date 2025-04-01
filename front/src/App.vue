@@ -23,10 +23,6 @@
           <v-icon icon="mdi-home" class="mr-2"/>
           Home
         </v-btn>
-        <v-btn to="/stats" class="mx-2" variant="text">
-          <v-icon icon="mdi-chart-box" class="mr-2"/>
-          Statistics
-        </v-btn>
         <v-btn to="/ranking" class="mx-2" variant="text">
           <v-icon icon="mdi-trophy" class="mr-2"/>
           Ranking
