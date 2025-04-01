@@ -4,14 +4,14 @@ FROM node:18-alpine
 # Crear directorio de la aplicación
 WORKDIR /app
 
-# Copiar package.json y package-lock.json
-COPY package*.json ./
+# Copiar package.json y package-lock.json desde la carpeta back
+COPY back/package*.json ./
 
 # Instalar dependencias
 RUN npm install
 
-# Copiar el resto de archivos
-COPY . .
+# Copiar el resto de archivos del backend
+COPY back/ .
 
 # Exponer el puerto 3000
 EXPOSE 3000
