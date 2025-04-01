@@ -3,242 +3,168 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
-const Character = require('./models/Character');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 const statsRoutes = require('./routes/stats');
+const charactersRoutes = require('./routes/characters');
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+    cors: {
+        origin: "*", // En producción, cambiar por la URL de Unity
+        methods: ["GET", "POST"]
+    }
+});
+
 const port = process.env.PORT || 3000;
 
-// Conectar a MongoDB
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => {
-        console.log('✅ Conectado a MongoDB');
-        // Crear algunos datos de prueba para las estadísticas
-        const Stats = require('./models/Stats');
-        const testStats = new Stats({
-            gameId: 'test1',
-            duration: 300,
-            winner: 'Player1',
-            players: [
-                {
-                    name: 'Player1',
-                    score: 1000,
-                    bombsPlaced: 15,
-                    powerupsCollected: 5,
-                    kills: 3
-                },
-                {
-                    name: 'Player2',
-                    score: 800,
-                    bombsPlaced: 12,
-                    powerupsCollected: 3,
-                    kills: 2
-                }
-            ],
-            mapName: 'Classic'
-        });
-
-        testStats.save()
-            .then(() => console.log('✅ Estadísticas de prueba creadas'))
-            .catch(err => console.error('❌ Error al crear estadísticas:', err));
-
-        // Crear un personaje de prueba
-        const testCharacter = new Character({
-            name: "Personaje de Prueba",
-            health: 5,
-            speed: 5,
-            damage: 30
-        });
-
-        testCharacter.save()
-            .then(() => console.log('✅ Personaje de prueba creado'))
-            .catch(err => console.error('❌ Error al crear personaje:', err));
-    })
-    .catch(err => {
-        console.error('❌ Error conectando a MongoDB:', err);
-    });
-
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../front')));
 
-// Rutas de la API
+// Rutas API
 app.use('/api/stats', statsRoutes);
+app.use('/api/characters', charactersRoutes);
 
-// Initial game data
-let gameData = {
-    characters: {
-        character1: {
-            name: "Personaje 1",
-            health: 5,
-            speed: 5,
-            damage: 30,
-            powerups: {
-                moreBombs: false,
-                speedBoost: false
-            },
-            stats: {
-                gamesPlayed: 0,
-                wins: 0,
-                enemiesDefeated: 0
-            }
-        },
-        character2: {
-            name: "Personaje 2",
-            health: 5,
-            speed: 5,
-            damage: 30,
-            powerups: {
-                moreBombs: false,
-                speedBoost: false
-            },
-            stats: {
-                gamesPlayed: 0,
-                wins: 0,
-                enemiesDefeated: 0
-            }
-        }
-    },
-    gameSettings: {
-        matchDuration: 180,
-        suddenDeath: true,
-        powerupSpawnRate: 0.3,
-        startingLives: 3
-    },
-    gameState: {
-        isGameActive: false,
-        currentMatchId: null,
-        activePlayers: []
-    }
-};
+// WebSocket eventos
+io.on('connection', (socket) => {
+    console.log('Cliente conectado:', socket.id);
 
-// API Endpoints for Web Interface
-app.get('/api/game-data', (req, res) => {
-    res.json(gameData);
-});
-
-app.get('/api/characters', (req, res) => {
-    res.json(gameData.characters);
-});
-
-app.put('/api/characters/:id', (req, res) => {
-    const { id } = req.params;
-    const updatedCharacter = req.body;
-    
-    if (gameData.characters[id]) {
-        gameData.characters[id] = {
-            ...gameData.characters[id],
-            ...updatedCharacter
-        };
-        res.json(gameData.characters[id]);
-    } else {
-        res.status(404).json({ error: 'Character not found' });
-    }
-});
-
-app.put('/api/characters/:id/powerups', (req, res) => {
-    const { id } = req.params;
-    const powerups = req.body;
-    
-    if (gameData.characters[id]) {
-        gameData.characters[id].powerups = {
-            ...gameData.characters[id].powerups,
-            ...powerups
-        };
-        res.json(gameData.characters[id].powerups);
-    } else {
-        res.status(404).json({ error: 'Character not found' });
-    }
-});
-
-app.get('/api/settings', (req, res) => {
-    res.json(gameData.gameSettings);
-});
-
-app.put('/api/settings', (req, res) => {
-    const updatedSettings = req.body;
-    gameData.gameSettings = {
-        ...gameData.gameSettings,
-        ...updatedSettings
-    };
-    res.json(gameData.gameSettings);
-});
-
-// Unity-specific endpoints
-app.post('/api/unity/start-game', (req, res) => {
-    const { players } = req.body;
-    const matchId = Date.now().toString();
-    
-    gameData.gameState = {
-        isGameActive: true,
-        currentMatchId: matchId,
-        activePlayers: players
-    };
-
-    // Prepare initial game state for Unity
-    const gameState = {
-        matchId,
-        settings: gameData.gameSettings,
-        players: players.map(playerId => ({
-            id: playerId,
-            ...gameData.characters[playerId]
-        }))
-    };
-
-    res.json(gameState);
-});
-
-app.post('/api/unity/end-game', (req, res) => {
-    const { matchId, results } = req.body;
-    
-    if (matchId !== gameData.gameState.currentMatchId) {
-        return res.status(400).json({ error: 'Invalid match ID' });
-    }
-
-    // Update player stats
-    results.forEach(result => {
-        if (gameData.characters[result.playerId]) {
-            const stats = gameData.characters[result.playerId].stats;
-            stats.gamesPlayed++;
-            if (result.isWinner) stats.wins++;
-            stats.enemiesDefeated += result.enemiesDefeated || 0;
-        }
+    // Evento cuando un jugador se une
+    socket.on('player:join', (playerData) => {
+        console.log('Jugador se unió:', playerData);
+        io.emit('player:joined', playerData);
     });
 
-    // Reset game state
-    gameData.gameState = {
-        isGameActive: false,
-        currentMatchId: null,
-        activePlayers: []
-    };
+    // Evento cuando un jugador se mueve
+    socket.on('player:move', (moveData) => {
+        socket.broadcast.emit('player:moved', moveData);
+    });
 
-    res.json({ status: 'success' });
+    // Evento cuando un jugador coloca una bomba
+    socket.on('player:placeBomb', (bombData) => {
+        io.emit('bomb:placed', bombData);
+    });
+
+    // Evento cuando una bomba explota
+    socket.on('bomb:explode', (explosionData) => {
+        io.emit('bomb:exploded', explosionData);
+    });
+
+    // Evento cuando un jugador recibe daño
+    socket.on('player:damage', (damageData) => {
+        io.emit('player:damaged', damageData);
+    });
+
+    // Evento cuando un jugador recoge un power-up
+    socket.on('player:powerup', (powerupData) => {
+        io.emit('player:powerupCollected', powerupData);
+    });
+
+    // Evento cuando un jugador muere
+    socket.on('player:die', (playerData) => {
+        io.emit('player:died', playerData);
+    });
+
+    // Evento cuando termina la partida
+    socket.on('game:end', (gameData) => {
+        io.emit('game:ended', gameData);
+    });
+
+    // Desconexión del jugador
+    socket.on('disconnect', () => {
+        console.log('Cliente desconectado:', socket.id);
+        io.emit('player:disconnected', { id: socket.id });
+    });
 });
 
-app.get('/api/unity/character/:id', (req, res) => {
-    const { id } = req.params;
-    
-    if (gameData.characters[id]) {
-        res.json(gameData.characters[id]);
-    } else {
-        res.status(404).json({ error: 'Character not found' });
-    }
-});
+// Conectar a MongoDB
+mongoose.connect(process.env.MONGO_URI)
+    .then(async () => {
+        console.log('✅ Conectado a MongoDB');
+        
+        // Crear datos de prueba
+        const Stats = require('./models/Stats');
+        const Character = require('./models/Character');
+        
+        // Limpiar datos existentes
+        await Stats.deleteMany({});
+        await Character.deleteMany({});
+        
+        // Crear algunos personajes de prueba
+        const testCharacters = [
+            {
+                name: "Bomberman Clásico",
+                health: 5,
+                speed: 5,
+                damage: 30,
+                powerups: {
+                    moreBombs: false,
+                    speedBoost: false
+                },
+                stats: {
+                    gamesPlayed: 0,
+                    wins: 0,
+                    enemiesDefeated: 0
+                }
+            },
+            {
+                name: "Speed Demon",
+                health: 3,
+                speed: 8,
+                damage: 20,
+                powerups: {
+                    moreBombs: false,
+                    speedBoost: true
+                },
+                stats: {
+                    gamesPlayed: 0,
+                    wins: 0,
+                    enemiesDefeated: 0
+                }
+            },
+            {
+                name: "Tank",
+                health: 8,
+                speed: 3,
+                damage: 40,
+                powerups: {
+                    moreBombs: true,
+                    speedBoost: false
+                },
+                stats: {
+                    gamesPlayed: 0,
+                    wins: 0,
+                    enemiesDefeated: 0
+                }
+            }
+        ];
 
-// Endpoint para sincronizar el estado del juego en tiempo real
-app.post('/api/unity/sync-state', (req, res) => {
-    const { matchId, playerStates } = req.body;
-    
-    if (matchId !== gameData.gameState.currentMatchId) {
-        return res.status(400).json({ error: 'Invalid match ID' });
-    }
+        await Character.insertMany(testCharacters);
+        
+        // Crear datos de prueba para estadísticas
+        const testData = [
+            {
+                player: "Jugador1",
+                bombsPlaced: 150,
+                gamesPlayed: 10,
+                blocksDestroyed: 300,
+                gameDetails: {
+                    mapName: "Classic",
+                    duration: 300,
+                    result: "win"
+                }
+            }
+        ];
+        
+        await Stats.insertMany(testData);
+        console.log('✅ Datos de prueba creados');
+    })
+    .catch(err => console.error('Error conectando a MongoDB:', err));
 
-    // Aquí podrías implementar la lógica de sincronización en tiempo real
-    // Por ejemplo, usando WebSockets para una comunicación más eficiente
-
-    res.json({ status: 'success' });
-});
-
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+// Iniciar servidor
+httpServer.listen(port, () => {
+    console.log(`🚀 Servidor corriendo en http://localhost:${port}`);
 });

@@ -1,18 +1,38 @@
 const mongoose = require('mongoose');
 
-const statsSchema = new mongoose.Schema({
-    gameId: String,
-    date: { type: Date, default: Date.now },
-    duration: Number, // duración en segundos
-    winner: String,
-    players: [{
+const StatsSchema = new mongoose.Schema({
+    player: String,
+    bombsPlaced: Number,
+    gamesPlayed: Number,
+    blocksDestroyed: Number,
+    kills: Number,
+    deaths: Number,
+    powerupsCollected: Number,
+    totalPlayTime: Number, // en minutos
+    winRate: Number,
+    favoriteMap: String,
+    achievements: [{
         name: String,
-        score: Number,
-        bombsPlaced: Number,
-        powerupsCollected: Number,
-        kills: Number
+        description: String,
+        dateUnlocked: Date
     }],
-    mapName: String
+    gameHistory: [{
+        date: { type: Date, default: Date.now },
+        mapName: String,
+        duration: Number,
+        result: String,
+        kills: Number,
+        deaths: Number,
+        bombsPlaced: Number,
+        blocksDestroyed: Number,
+        powerupsCollected: Number
+    }],
+    seasonStats: {
+        season: Number,
+        rank: String,
+        points: Number,
+        highestStreak: Number
+    }
 });
 
-module.exports = mongoose.model('Stats', statsSchema);
+module.exports = mongoose.model('Stats', StatsSchema);
