@@ -7,7 +7,7 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const statsRoutes = require('./routes/stats');
 const charactersRoutes = require('./routes/characters');
-const handleGameEvents = require('./gameEvents');
+const { setupGameEvents } = require('./gameEvents');
 
 const app = express();
 const httpServer = createServer(app);
@@ -33,23 +33,56 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/stats', statsRoutes);
 app.use('/api/characters', charactersRoutes);
 
-// Ruta principal
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Ruta específica para Unity
+app.post('/api/unity/stats', async (req, res) => {
+    try {
+        const { player, stats } = req.body;
+        console.log('Recibiendo estadísticas de Unity:', { player, stats });
+        
+        // Validar los datos recibidos
+        if (!player || !stats) {
+            return res.status(400).json({ 
+                error: 'Se requieren los campos player y stats' 
+            });
+        }
+
+        // Actualizar las estadísticas usando el modelo existente
+        const Stats = require('./models/Stats');
+        const updatedStats = await Stats.findOneAndUpdate(
+            { player },
+            {
+                $inc: {
+                    blocksDestroyed: stats.blocksDestroyed || 0,
+                    bombsPlaced: stats.bombsPlaced || 0,
+                    gamesPlayed: stats.gamesPlayed || 0
+                },
+                $set: {
+                    'gameDetails.date': new Date()
+                }
+            },
+            { 
+                new: true,
+                upsert: true,
+                setDefaultsOnInsert: true
+            }
+        );
+
+        res.json({
+            message: 'Estadísticas actualizadas correctamente desde Unity',
+            stats: updatedStats
+        });
+    } catch (error) {
+        console.error('Error al procesar estadísticas de Unity:', error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
-// Ruta de healthcheck
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
 
-// WebSocket eventos
 io.on('connection', (socket) => {
     console.log('🎮 Cliente conectado:', socket.id);
     
     // Configurar eventos del juego
-    const Stats = require('./models/Stats');
-    handleGameEvents(io, socket, Stats);
+    setupGameEvents(io);
 
     socket.on('disconnect', () => {
         console.log('👋 Cliente desconectado:', socket.id);
