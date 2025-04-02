@@ -7,6 +7,7 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const statsRoutes = require('./routes/stats');
 const charactersRoutes = require('./routes/characters');
+const authRoutes = require('./routes/auth');
 const { setupGameEvents } = require('./gameEvents');
 
 const app = express();
@@ -19,7 +20,7 @@ const io = new Server(httpServer, {
     }
 });
 
-const port = process.env.PORT || 3000;
+const port = 3001;
 
 // Middleware
 app.use(cors({
@@ -32,6 +33,38 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Rutas API
 app.use('/api/stats', statsRoutes);
 app.use('/api/characters', charactersRoutes);
+app.use('/api/auth', authRoutes);
+
+// Ruta para obtener el ranking
+app.get('/api/rankings', async (req, res) => {
+    try {
+        const sequelize = require('./models/index.js');
+        
+        // Primero, veamos las tablas que existen
+        const [tables] = await sequelize.query('SHOW TABLES');
+        console.log('Tablas en la base de datos:', tables);
+        
+        // Luego, veamos la estructura de la tabla users
+        const [structure] = await sequelize.query('DESCRIBE users');
+        console.log('Estructura de la tabla users:', structure);
+        
+        // Finalmente, obtengamos todos los registros
+        // const [players] = await sequelize.query('SELECT * FROM users');
+        // console.log('Todos los jugadores:', players);
+        
+        const [players] = await sequelize.query('SELECT     u.name AS Nombre_Usuario,     j.id_jugador AS Nombre_Jugador,     j.wins FROM jugadores j JOIN users u ON j.id_user = u.id_user ORDER BY j.wins DESC');
+        console.log('Todos los jugadores:', players);
+
+        res.json({
+            tables,
+            structure,
+            players
+        });
+    } catch (error) {
+        console.error('Error al obtener rankings:', error);
+        res.status(500).json({ error: 'Error al obtener rankings', details: error.message });
+    }
+});
 
 // Ruta específica para Unity
 app.post('/api/unity/stats', async (req, res) => {

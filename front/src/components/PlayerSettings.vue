@@ -48,19 +48,6 @@
                   ticks
                   prepend-icon="mdi-heart"
                 ></v-slider>
-
-                <v-slider
-                  v-model="player.armor"
-                  :disabled="!player.active"
-                  :color="player.color === 'primary' ? 'success' : 'info'"
-                  label="Armadura"
-                  min="1"
-                  max="10"
-                  thumb-label
-                  step="1"
-                  ticks
-                  prepend-icon="mdi-shield"
-                ></v-slider>
               </v-col>
 
               <v-col cols="12">
@@ -69,19 +56,6 @@
                   <v-icon small class="mr-1">mdi-bomb</v-icon>
                   Configuración de Bombas
                 </div>
-
-                <v-slider
-                  v-model="player.bombPower"
-                  :disabled="!player.active"
-                  :color="player.color === 'primary' ? 'success' : 'info'"
-                  label="Poder de Bomba"
-                  min="1"
-                  max="10"
-                  thumb-label
-                  step="1"
-                  ticks
-                  prepend-icon="mdi-explosion"
-                ></v-slider>
 
                 <v-slider
                   v-model="player.bombCount"
@@ -97,64 +71,17 @@
                 ></v-slider>
 
                 <v-slider
-                  v-model="player.bombReloadSpeed"
+                  v-model="player.masBombas"
                   :disabled="!player.active"
                   :color="player.color === 'primary' ? 'success' : 'info'"
-                  label="Velocidad de Recarga"
+                  label="Más Bombas"
                   min="1"
-                  max="10"
+                  max="5"
                   thumb-label
                   step="1"
                   ticks
-                  prepend-icon="mdi-reload"
+                  prepend-icon="mdi-plus-circle"
                 ></v-slider>
-              </v-col>
-
-              <v-col cols="12">
-                <v-divider></v-divider>
-                <div class="text-subtitle-1 my-2">
-                  <v-icon small class="mr-1">mdi-star</v-icon>
-                  Power-ups
-                </div>
-
-                <v-row>
-                  <v-col cols="6">
-                    <v-switch
-                      v-model="player.powerups.speedBoost"
-                      :disabled="!player.active"
-                      :color="player.color === 'primary' ? 'success' : 'info'"
-                      label="Boost de Velocidad"
-                      prepend-icon="mdi-run-fast"
-                    ></v-switch>
-                  </v-col>
-                  <v-col cols="6">
-                    <v-switch
-                      v-model="player.powerups.shield"
-                      :disabled="!player.active"
-                      :color="player.color === 'primary' ? 'success' : 'info'"
-                      label="Escudo"
-                      prepend-icon="mdi-shield-half-full"
-                    ></v-switch>
-                  </v-col>
-                  <v-col cols="6">
-                    <v-switch
-                      v-model="player.powerups.bombPass"
-                      :disabled="!player.active"
-                      :color="player.color === 'primary' ? 'success' : 'info'"
-                      label="Atravesar Bombas"
-                      prepend-icon="mdi-bomb-off"
-                    ></v-switch>
-                  </v-col>
-                  <v-col cols="6">
-                    <v-switch
-                      v-model="player.powerups.wallPass"
-                      :disabled="!player.active"
-                      :color="player.color === 'primary' ? 'success' : 'info'"
-                      label="Atravesar Paredes"
-                      prepend-icon="mdi-wall"
-                    ></v-switch>
-                  </v-col>
-                </v-row>
               </v-col>
 
               <v-col cols="12">
@@ -227,15 +154,10 @@ export default {
           active: true,
           speed: 5,
           health: 5,
-          armor: 5,
-          bombPower: 3,
           bombCount: 2,
-          bombReloadSpeed: 5,
+          masBombas: 1,
           powerups: {
-            speedBoost: false,
-            shield: false,
-            bombPass: false,
-            wallPass: false
+            speedBoost: false
           },
           stats: {
             blocksDestroyed: 0,
@@ -249,15 +171,10 @@ export default {
           active: true,
           speed: 5,
           health: 5,
-          armor: 5,
-          bombPower: 3,
           bombCount: 2,
-          bombReloadSpeed: 5,
+          masBombas: 1,
           powerups: {
-            speedBoost: false,
-            shield: false,
-            bombPass: false,
-            wallPass: false
+            speedBoost: false
           },
           stats: {
             blocksDestroyed: 0,
@@ -324,10 +241,8 @@ export default {
           active: player.active,
           speed: player.speed,
           health: player.health,
-          armor: player.armor,
-          bombPower: player.bombPower,
           bombCount: player.bombCount,
-          bombReloadSpeed: player.bombReloadSpeed,
+          masBombas: player.masBombas,
           powerups: { ...player.powerups }
         }
       })

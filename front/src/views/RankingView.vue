@@ -17,12 +17,9 @@
               <thead>
                 <tr>
                   <th class="text-center">RANK</th>
+                  <th class="text-left">USER</th>
                   <th class="text-left">PLAYER</th>
                   <th class="text-center">WINS</th>
-                  <th class="text-center">KILLS</th>
-                  <th class="text-center">BOMBS</th>
-                  <th class="text-center">BLOCKS</th>
-                  <th class="text-center">SCORE</th>
                 </tr>
               </thead>
               <tbody>
@@ -36,14 +33,11 @@
                   <td>
                     <div class="d-flex align-center">
                       <v-icon :icon="getPlayerIcon(player)" class="me-2" :color="getPlayerColor(index)"/>
-                      {{ player.name }}
+                      {{ player.Nombre_Usuario }}
                     </div>
                   </td>
+                  <td class="text-center">{{ player.Nombre_Jugador }}</td>
                   <td class="text-center">{{ player.wins }}</td>
-                  <td class="text-center">{{ player.kills }}</td>
-                  <td class="text-center">{{ player.bombs }}</td>
-                  <td class="text-center">{{ player.blocks }}</td>
-                  <td class="text-center font-weight-bold">{{ player.score }}</td>
                 </tr>
               </tbody>
             </v-table>
@@ -71,8 +65,9 @@ export default {
 
     const fetchRankings = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/rankings')
-        rankings.value = response.data
+        const response = await axios.get('http://localhost:3001/api/rankings')
+        console.error('HOLAAA', response.data)
+        rankings.value = response.data.players
       } catch (error) {
         console.error('Error fetching rankings:', error)
         rankings.value = [] // Si hay error, mostramos una lista vacía en lugar de datos falsos
@@ -108,6 +103,7 @@ export default {
     }
 
     onMounted(() => {
+      console.error('HOLAAA')
       fetchRankings()
       
       // Conectar al socket

@@ -27,7 +27,14 @@ public class StatsManager : MonoBehaviour
     // Método para enviar estadísticas al servidor
     public void SendStats(string playerName, int blocksDestroyed, int bombsPlaced, int gamesPlayed)
     {
-        StartCoroutine(SendStatsCoroutine(playerName, blocksDestroyed, bombsPlaced, gamesPlayed));
+        if (AuthManager.Instance.IsAuthenticated())
+        {
+            StartCoroutine(SendStatsCoroutine(playerName, blocksDestroyed, bombsPlaced, gamesPlayed));
+        }
+        else
+        {
+            Debug.LogWarning("Usuario no autenticado. Las estadísticas no se enviarán.");
+        }
     }
 
     private IEnumerator SendStatsCoroutine(string playerName, int blocksDestroyed, int bombsPlaced, int gamesPlayed)
@@ -54,6 +61,13 @@ public class StatsManager : MonoBehaviour
             www.uploadHandler = new UploadHandlerRaw(bodyRaw);
             www.downloadHandler = new DownloadHandlerBuffer();
             www.SetRequestHeader("Content-Type", "application/json");
+            
+            // Añadir el token de autenticación
+            string token = AuthManager.Instance.Token;
+            if (!string.IsNullOrEmpty(token))
+            {
+                www.SetRequestHeader("Authorization", $"Bearer {token}");
+            }
 
             // Enviar la petición
             yield return www.SendWebRequest();

@@ -8,14 +8,14 @@ class SocketService {
 
     connect() {
         if (!this.socket) {
-            this.socket = io('http://localhost:3000');
+            this.socket = io('http://localhost:3001');
             
             this.socket.on('connect', () => {
-                console.log('🎮 Conectado al servidor de WebSocket');
+                console.log(' Conectado al servidor de WebSocket');
             });
 
             this.socket.on('disconnect', () => {
-                console.log('❌ Desconectado del servidor de WebSocket');
+                console.log(' Desconectado del servidor de WebSocket');
             });
 
             // Eventos del juego
@@ -29,9 +29,6 @@ class SocketService {
             'statsUpdated',
             'rankingUpdated',
             'playerKilled',
-            'blockDestroyed',
-            'bombPlaced',
-            'gameEnded'
         ];
 
         events.forEach(event => {
