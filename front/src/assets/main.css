@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+  --primary-color: #ff4757;
+  --secondary-color: #2f3542;
+  --accent-color: #ffa502;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--secondary-color);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Animación de bombas en el fondo */
+.bomb-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  opacity: 0.1;
+}
+
+.bomb {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  animation: float 15s linear infinite;
+}
+
+.bomb::before {
+  content: '💣';
+  font-size: 20px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Estilos para títulos */
+.game-title {
+  font-family: 'Press Start 2P', cursive;
+  text-transform: uppercase;
+  background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    filter: drop-shadow(0 0 2px var(--primary-color));
+  }
+  to {
+    filter: drop-shadow(0 0 10px var(--accent-color));
+  }
+}
+
+/* Estilos para cards */
+.v-card {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.v-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Estilos para la barra de navegación */
+.v-app-bar {
+  background: rgba(47, 53, 66, 0.95) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Animación para botones */
+.v-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.v-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.v-btn:hover::after {
+  width: 200%;
+  height: 200%;
+}
