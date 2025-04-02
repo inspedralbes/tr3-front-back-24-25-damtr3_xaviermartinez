@@ -80,7 +80,7 @@ app.post('/api/unity/stats', async (req, res) => {
         }
 
         // Actualizar las estadísticas usando el modelo existente
-        const Stats = require('./models/Stats');
+        const Stats = require('./TRASH/Stats.js');
         const updatedStats = await Stats.findOneAndUpdate(
             { player },
             {
@@ -128,8 +128,8 @@ mongoose.connect(process.env.MONGODB_URI)
 .then(() => {
     console.log('✅ Conectado a MongoDB Atlas');
     // Crear datos de prueba
-    const Stats = require('./models/Stats');
-    const Character = require('./models/Character');
+    const Stats = require('./TRASH/Stats.js');
+    const Character = require('./TRASH/Character.js');
     
     // Limpiar datos existentes
     Stats.deleteMany({});

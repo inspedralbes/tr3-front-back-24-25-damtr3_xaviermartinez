@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Stats = require('../models/Stats');
+const Stats = require('../TRASH/Stats');
 
 // Obtener todas las estadísticas
 router.get('/', async (req, res) => {

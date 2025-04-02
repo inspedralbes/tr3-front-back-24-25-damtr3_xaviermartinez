@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Character = require('../models/Character');
+const Character = require('../TRASH/Character');
 
 // Obtener todos los personajes
 router.get('/', async (req, res) => {
